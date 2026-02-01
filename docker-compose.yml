@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:5.0
+    container_name: movie-booking-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: moviebooking
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - movie-booking-network
+
+  backend:
+    build: ./backend
+    container_name: movie-booking-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/moviebooking
+      JWT_SECRET: your_super_secret_jwt_key_change_in_production
+      JWT_EXPIRE: 7d
+    depends_on:
+      - mongodb
+    networks:
+      - movie-booking-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build: ./frontend
+    container_name: movie-booking-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    environment:
+      REACT_APP_API_URL: http://localhost:5000/api
+    depends_on:
+      - backend
+    networks:
+      - movie-booking-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  movie-booking-network:
+    driver: bridge
